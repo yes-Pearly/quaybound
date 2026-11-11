@@ -8,13 +8,14 @@ let saved={},storageOK=true;try{saved=JSON.parse(localStorage.getItem(SAVE)||'{}
 let lang=saved.lang==='fr'?'fr':'en',muted=saved.muted===true;
 const records=Array.from({length:LEVELS.length},(_,i)=>{const r=saved.records?.[i];return r&&Number.isFinite(r.time)&&r.time>0&&r.time<3600?{time:r.time,stamps:Math.min(3,Math.max(0,Math.floor(Number(r.stamps)||0))),stars:Math.min(3,Math.max(1,Math.floor(Number(r.stars)||1)))}:null});
 let world,view,index=0,mode='intro',modalType=null,previousModal=null,returnMode='intro',clock=0,acc=0,last=0,transitionAt=0,crashReason='splash',newBest=false,resultStars=0,activeFocus=null;
+const touches=new Map();
 const keys=new Set(),pointers={left:false,right:false},input={left:false,right:false};
 const t=k=>COPY[lang][k]||k,ln=level=>level.name[lang==='en'?0:1],fmt=seconds=>`${Math.floor(seconds/60).toString().padStart(2,'0')}:${(seconds%60).toFixed(1).padStart(4,'0')}`;
 function save(){try{localStorage.setItem(SAVE,JSON.stringify({lang,muted,records}))}catch{storageOK=false}}
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(toast.id);toast.id=setTimeout(()=>$('#toast').classList.remove('show'),2600)}
 function translate(){document.documentElement.lang=lang;$$('[data-i18n]').forEach(el=>{el.innerHTML=t(el.dataset.i18n)});$('#language').innerHTML=lang==='en'?'EN <span class="dim">/ FR</span>':'<span class="dim">EN /</span> FR';$('#language').setAttribute('aria-label',lang==='en'?'Passer en français':'Switch to English');$('#sound').setAttribute('aria-label',t(muted?'unmute':'mute'));$('#fullscreen').setAttribute('aria-label',t('fullscreen'));$('#routes').setAttribute('aria-label',t('menu'));$('#pause').setAttribute('aria-label',t('pauseLabel'));$('#restart').setAttribute('aria-label',t('restart'));$('#brake').setAttribute('aria-label',t('brake'));$('#throttle').setAttribute('aria-label',t('gas'));if(records.some(Boolean))$('#play [data-i18n]').textContent=t('continue');if(world)refreshHUD();if(modalType)renderModal(modalType)}
-function resetInput(){keys.clear();pointers.left=pointers.right=false;input.left=input.right=false;$('#brake').classList.remove('active');$('#throttle').classList.remove('active')}
-function readInput(){input.left=pointers.left||['ArrowLeft','KeyA','KeyS','ArrowDown'].some(k=>keys.has(k));input.right=pointers.right||['ArrowRight','KeyD','KeyW','ArrowUp'].some(k=>keys.has(k));if(input.left&&input.right)input.left=input.right=false;$('#brake').classList.toggle('active',input.left);$('#throttle').classList.toggle('active',input.right)}
+function resetInput(){for(const [id,p] of touches){try{if(p.owner.hasPointerCapture(id))p.owner.releasePointerCapture(id)}catch{}}touches.clear();keys.clear();pointers.left=pointers.right=false;input.left=input.right=false;$('#brake').classList.remove('active');$('#throttle').classList.remove('active')}
+function readInput(){input.left=pointers.left||['ArrowLeft','KeyA','KeyS','ArrowDown'].some(k=>keys.has(k));input.right=pointers.right||['ArrowRight','KeyD','KeyW','ArrowUp'].some(k=>keys.has(k));$('#brake').classList.toggle('active',input.left);$('#throttle').classList.toggle('active',input.right)}
 function loadLevel(i,intro=false,car=LEVELS[i].car){
  previousModal=null;
  resetInput();index=i;world=createWorld(index,car);for(let j=0;j<42;j++)step(world,{left:false,right:false});world.events=[];view.load(world,intro);mode=intro?'intro':'playing';modalType=null;$('#overlay').classList.add('hidden');$('#hud').classList.toggle('hidden',intro);$('#intro').inert=!intro;$('#intro').setAttribute('aria-hidden',String(!intro));document.body.classList.toggle('playing',!intro);$('#ready').classList.remove('hidden');$('#tip').style.opacity=1;$('#progress').style.width='0%';acc=0;transitionAt=0;refreshHUD();if(!intro){sound.start();sound.effect('click');$('#restart').focus({preventScroll:true})}
@@ -34,11 +35,11 @@ function closeModal(){
  modalType=null;$('#overlay').classList.add('hidden');if(mode==='paused')mode=returnMode==='intro'?'intro':'playing';resetInput();last=performance.now();activeFocus?.focus?.({preventScroll:true});
 }
 function renderModal(type){
- const el=$('#modal');el.className='modal';$('#overlay').setAttribute('aria-label',type==='map'?t('map'):type==='pause'?t('pauseTitle'):type==='win'?t('win'):type==='complete'?t('completeTitle'):t('crashTitle'));
+ const el=$('#modal');el.className='modal';$('#overlay').setAttribute('aria-label',type==='map'?t('map'):type==='pause'?t('pauseTitle'):type==='win'?t('win'):type==='complete'?t('completeTitle'):type==='garage'?t('garage'):t('crashTitle'));
  if(type==='map'){
   el.innerHTML=`<div class="modal-top"><div><div class="eyebrow">PIGEON STUDIO · QUAYBOUND</div><h2>${t('map')}</h2></div><button class="icon-button" data-action="close" aria-label="${t('close')}">×</button></div><p>${t('mapSub')}</p><div class="route-grid">${LEVELS.map((l,i)=>`<button style="--card:#${THEMES[l.theme].sky.toString(16)}" class="route-card ${i===index?'current':''}" data-level="${i}"><span class="num">${String(i+1).padStart(2,'0')}</span><span class="name">${ln(l)}</span><span class="rating">${records[i]?'★'.repeat(records[i].stars)+'☆'.repeat(3-records[i].stars):'☆☆☆'}</span><span class="best">${records[i]?t('bestLabel')+' '+fmt(records[i].time):VEHICLES[l.car].name[lang==='en'?0:1]}</span></button>`).join('')}</div><div class="route-foot"><p>${t('mapFoot')}</p><button class="secondary" data-action="home">${t('back')} ↗</button></div>`;
  }else if(type==='garage'){
-  el.innerHTML=`<div class="modal-top"><div><div class="eyebrow">PIGEON STUDIO</div><h2>${t('garage')}</h2></div><button class="icon-button" data-action="close" aria-label="${t('close')}">×</button></div><div class="garage-grid">${VEHICLES.map((v,i)=>`<button class="garage-card" data-car="${i}" style="--ride:#${v.color.toString(16)}"><svg class="car-picture" viewBox="0 0 120 85"><path d="M17 55H104V39H17Z" fill="#${v.color.toString(16)}"/>${v.id==='van'?'<path d="M22 40V13H95V40Z" fill="#bb83ff"/><path d="M70 17H91V35H70Z" fill="#75dfff"/>':v.id==='rocket'?'<path d="m13 48-13 8 13 7" fill="#ffcf32"/><path d="M35 40V23H77L92 40Z" fill="#ff8549"/>':v.id==='monster'?'<path d="M33 40V19H75L89 40Z" fill="#ff557e"/><path d="M42 23H70V36H42Z" fill="#75dfff"/>':v.id==='buggy'?'<path d="M30 40V17H78L90 40" stroke="#25243e" stroke-width="5" fill="none"/>':''}<circle cx="33" cy="60" r="${v.id==='monster'?19:13}" fill="#25243e"/><circle cx="88" cy="60" r="${v.id==='monster'?19:13}" fill="#25243e"/><circle cx="33" cy="60" r="7" fill="#fff7df"/><circle cx="88" cy="60" r="7" fill="#fff7df"/><circle cx="56" cy="30" r="9" fill="#fff7df"/><path d="m64 28 9 4-9 3" fill="#ff9a35"/></svg><b>${v.name[lang==='en'?0:1]}</b><small>${v.tag[lang==='en'?0:1]}</small><span class="stat-label">${t('speed')}</span><i class="car-stat"><i style="width:${v.drive/11*100}%"></i></i><span class="stat-label">${t('chunky')}</span><i class="car-stat"><i style="width:${v.wheel/42*100}%"></i></i></button>`).join('')}</div>`;
+  el.innerHTML=`<div class="modal-top"><div><div class="eyebrow">PIGEON STUDIO</div><h2>${t('garage')}</h2></div><button class="icon-button" data-action="close" aria-label="${t('close')}">×</button></div><div class="garage-grid">${VEHICLES.map((v,i)=>`<button class="garage-card" data-car="${i}" style="--ride:#${v.color.toString(16)}"><svg class="car-picture" viewBox="0 0 120 85"><path d="M17 55H104V39H17Z" fill="#${v.color.toString(16)}"/>${v.id==='van'?'<path d="M22 40V13H95V40Z" fill="#bb83ff"/><path d="M70 17H91V35H70Z" fill="#75dfff"/>':v.id==='rocket'?'<path d="m13 48-13 8 13 7" fill="#ffcf32"/><path d="M35 40V23H77L92 40Z" fill="#ff8549"/>':v.id==='monster'?'<path d="M33 40V19H75L89 40Z" fill="#ff557e"/><path d="M42 23H70V36H42Z" fill="#75dfff"/>':v.id==='buggy'?'<path d="M30 40V17H78L90 40" stroke="#25243e" stroke-width="5" fill="none"/>':''}<circle cx="33" cy="60" r="${v.id==='monster'?19:13}" fill="#25243e"/><circle cx="88" cy="60" r="${v.id==='monster'?19:13}" fill="#25243e"/><circle cx="33" cy="60" r="7" fill="#fff7df"/><circle cx="88" cy="60" r="7" fill="#fff7df"/><circle cx="56" cy="30" r="9" fill="#fff7df"/><path d="m64 28 9 4-9 3" fill="#ff9a35"/></svg><b>${v.name[lang==='en'?0:1]}</b><small>${v.tag[lang==='en'?0:1]}</small><span class="drivetrain">${v.rearDrive===1?(lang==='fr'?'PROPULSION':'REAR DRIVE'):v.rearDrive===0?(lang==='fr'?'TRACTION':'FRONT DRIVE'):'4×4'}</span><span class="stat-label">${t('speed')}</span><i class="car-stat"><i style="width:${Math.min(100,v.drive/12*100)}%"></i></i><span class="stat-label">${lang==='fr'?'POIDS':'WEIGHT'}</span><i class="car-stat"><i style="width:${v.mass/27*100}%"></i></i></button>`).join('')}</div>`;
  }else if(type==='pause'){
   el.classList.add('result');el.innerHTML=`<div class="eyebrow">${t('pause')}</div><h2>${t('pauseTitle')}</h2><p>${ln(world.level)}</p><div class="pause-instructions"><div><kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd><br>${t('controls1')}</div><div><kbd>R</kbd> / <kbd>Esc</kbd><br>${t('controls2')}</div></div><button class="primary" data-action="close">${t('resume')} →</button><div class="actions"><button class="secondary" data-action="restart">${t('again')}</button><button class="secondary" data-action="map">${t('choose')}</button></div>`;
  }else if(type==='crash'){
@@ -57,7 +58,8 @@ function event(ev){
  if(ev.type==='boost'){sound.effect('boost');view.shake=.1;view.burst(ev.x/SCALE,-ev.y/SCALE,0xffcf32,24,1.4);toast(t('boost'))}
  if(ev.type==='crumble'){sound.effect('crumble');view.burst(ev.x/SCALE,-ev.y/SCALE,0xffa356,9,.5)}
  if(ev.type==='crash'){
-  resetInput();crashReason=ev.reason;mode='finishing';transitionAt=clock+.4;sound.effect('crash');view.shake=.12;
+  resetInput();crashReason=ev.reason;mode='finishing';transitionAt=clock+(ev.reason==='splash'?.55:.9);sound.effect('crash');view.shake=.12;
+  if(ev.reason!=='splash'){view.explode(world);sound.effect('explode');toast(lang==='fr'?'BOUM !':'BOOM!')}
   if(ev.reason==='splash')view.burst(world.body.position.x/SCALE,-3.8,0x78c9ff,55,1.8);
  }
  if(ev.type==='win'){
@@ -80,10 +82,20 @@ async function fullscreen(){try{if(document.fullscreenElement)await document.exi
 document.addEventListener('fullscreenchange',()=>{const full=!!document.fullscreenElement;$('#fullscreen').setAttribute('aria-label',t(full?'exitFullscreen':'fullscreen'));$('#fullscreen').dataset.active=String(full);view?.resize()});
 function toggleSound(){muted=!muted;sound.start();sound.mute(muted);save();$('#sound').style.opacity=muted?'.45':'1';$('#sound').setAttribute('aria-label',t(muted?'unmute':'mute'));toast(t(muted?'soundOff':'soundOn'))}
 $('#honk').onclick=honk;$('#play').onclick=()=>start();$('#choose').onclick=()=>{sound.start();openModal('map')};$('#home').onclick=e=>{e.preventDefault();goHome()};$('#language').onclick=()=>{lang=lang==='en'?'fr':'en';save();translate()};$('#sound').onclick=toggleSound;$('#fullscreen').onclick=fullscreen;$('#restart').onclick=()=>start(index,world.carIndex);$('#pause').onclick=pause;$('#routes').onclick=()=>openModal('map');$('#garage').onclick=()=>openModal('garage');$('#car-label').onclick=()=>openModal('garage');
-for(const [selector,side] of [['#brake','left'],['#throttle','right']]){
- const button=$(selector);button.addEventListener('pointerdown',e=>{if(mode!=='playing')return;e.preventDefault();sound.start();pointers[side]=true;button.setPointerCapture(e.pointerId);readInput()});
- const release=e=>{e.preventDefault();pointers[side]=false;readInput()};for(const kind of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(kind,release);button.addEventListener('contextmenu',e=>e.preventDefault());
+// One pointer per finger, captured until release. Moving between screen halves switches pedals.
+function syncTouches(){pointers.left=[...touches.values()].some(p=>p.side==='left');pointers.right=[...touches.values()].some(p=>p.side==='right');readInput()}
+function beginTouch(e,side,fixed=false){
+ if(mode!=='playing'||(e.pointerType==='mouse'&&e.button!==0))return;
+ e.preventDefault();sound.start();const owner=fixed?e.currentTarget:$('#drive-area');
+ touches.set(e.pointerId,{side,fixed,owner});owner.setPointerCapture(e.pointerId);syncTouches();
 }
+function screenSide(x){const rect=$('#app').getBoundingClientRect();return x-rect.left<rect.width/2?'left':'right'}
+$('#drive-area').addEventListener('pointerdown',e=>beginTouch(e,screenSide(e.clientX)),{passive:false});
+for(const [selector,side] of [['#brake','left'],['#throttle','right']])$(selector).addEventListener('pointerdown',e=>beginTouch(e,side,true),{passive:false});
+$('#app').addEventListener('pointermove',e=>{const p=touches.get(e.pointerId);if(!p)return;e.preventDefault();if(!p.fixed){p.side=screenSide(e.clientX);syncTouches()}},{passive:false});
+for(const eventName of ['pointerup','pointercancel','lostpointercapture'])$('#app').addEventListener(eventName,e=>{if(!touches.has(e.pointerId))return;touches.delete(e.pointerId);syncTouches()});
+$('#app').addEventListener('selectstart',e=>e.preventDefault());
+$('#app').addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('keydown',e=>{
  if(['ArrowRight','ArrowLeft','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();
  if(e.code==='Tab'&&modalType){const all=$$('#modal button:not(:disabled)');if(!all.length)return;const first=all[0],last=all.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}return}
@@ -93,7 +105,7 @@ document.addEventListener('keydown',e=>{
  if(e.code==='KeyP'){pause();return}
  if(e.code==='KeyR'&&mode!=='intro'){start(index,world.carIndex);return}
  if(e.code==='Space'){
-  if(mode==='intro'&&!modalType)start();else if(modalType==='crash')start(index);else if(modalType==='win'){if(records.every(Boolean)){modalType='complete';renderModal('complete')}else index<LEVELS.length-1?start(index+1):openModal('map')}else if(modalType==='pause')closeModal();return;
+  if(mode==='intro'&&!modalType)start();else if(modalType==='crash')start(index,world.carIndex);else if(modalType==='win'){if(records.every(Boolean)){modalType='complete';renderModal('complete')}else index<LEVELS.length-1?start(index+1):openModal('map')}else if(modalType==='pause')closeModal();return;
  }
  if(mode==='playing'&&['ArrowRight','ArrowLeft','ArrowUp','ArrowDown','KeyA','KeyD','KeyW','KeyS'].includes(e.code)){sound.start();keys.add(e.code)}
 });

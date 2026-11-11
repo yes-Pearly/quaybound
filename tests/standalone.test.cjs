@@ -8,5 +8,5 @@ assert.ok(!/<(?:img|link)\b[^>]*\b(?:src|href)=["'](?!data:|#)/i.test(html),'Ima
 const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
 assert.equal(scripts.length,2,'Matter and the complete game must both be inline');
 for(const [i,script] of scripts.entries())new vm.Script(script[1],{filename:`standalone-script-${i}.js`});
-assert.ok(html.includes('quaybound-version" content="2.0.0'));
+assert.ok(html.includes('quaybound-version" content="3.0.0'));
 console.log('✓ index.html is self-contained and all scripts parse as classic JavaScript');

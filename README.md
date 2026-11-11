@@ -1,8 +1,10 @@
 # QUAYBOUND
 
-**25 levels. Five terrible vehicles.** A browser driving game by **Pigeon Studio**.
+**25 levels. Five terrible vehicles. Version 3.** A browser driving game by **Pigeon Studio**.
 
 Drive a buggy, a van, a monster truck, a kart or a suspiciously legal rocket car across 25 short tracks. Boost strips, springs, falling roads, see-saws, moving bridges, ice, conveyor belts, swinging balls, sweepers and presses. Grab the three stamps. Try again. Honk for absolutely no reason.
+
+Driven wheels, sprung axles, progressive braking and real weight transfer. Each vehicle has its own mass, centre of gravity, suspension travel and drivetrain. Upside-down roof impacts explode into panels, smoke and bouncing wheels. Air control rewards short corrections; holding the accelerator through every jump will end badly.
 
 English by default; French available. Keyboard and touch controls. Fullscreen. Local best times. No account, ads, analytics, CDN, remote fonts or runtime downloads.
 
@@ -10,6 +12,9 @@ English by default; French available. Keyboard and touch controls. Fullscreen. L
 | --- | --- |
 | → / D / W | Go; tilt backwards in the air |
 | ← / A / S | Brake, reverse; tilt forwards in the air |
+| Right half of the screen | Go; tilt backwards in the air |
+| Left half of the screen | Brake, then reverse; tilt forwards in the air |
+| Both sides together | Brake and hold |
 | R | Instant retry |
 | Escape / P | Pause |
 | F | Fullscreen |
@@ -35,15 +40,15 @@ Regression checks:
 node --test tests/*.test.cjs
 ```
 
-The physics checks complete all 25 recommended-vehicle routes with all stamps within their target times, exercise the garage vehicles, braking, air control, parking, boosts, springs, falling planks, see-saws, crush hazards, water failures and the countdown. Browser playtesting checks rendering, controls, menus, translation and fullscreen separately.
+The 42 physics checks complete all 25 recommended-vehicle routes with all stamps within their target times, exercise the garage vehicles, braking, air control, parking, boosts, springs, falling planks, see-saws, crush hazards, water failures and the countdown. Browser playtesting checks rendering, controls, menus, translation and fullscreen separately.
 
 ## GitHub Pages
 
-Publish the playable `index.html` at the repository root. In **Settings → Pages**, choose **Deploy from a branch → main → /(root)**. The source edition also includes an optional Actions deployment workflow. No build is required for the published game.
+Publish the playable `index.html` at the repository root. This repository uses **Settings → Pages → GitHub Actions** and the included deployment workflow, which runs regression checks before publishing. No build is required for the published game.
 
 ## Français
 
-**25 pistes. Cinq engins douteux.** Un jeu de navigateur de **Pigeon Studio**. Choisis un véhicule dans le garage, accélère, freine et recommence. Les arrivées jaunes demandent de se garer ; les flèches jaunes donnent un boost. **H** : pouêt. **EN / FR** : français. **F** : plein écran. Les records restent dans ton navigateur.
+**25 pistes. Cinq engins douteux.** Un jeu de navigateur de **Pigeon Studio**. Choisis un véhicule dans le garage, accélère, freine et recommence. Les arrivées jaunes demandent de se garer ; les flèches jaunes donnent un boost. **H** : pouêt. **EN / FR** : français. **F** : plein écran. Sur mobile : moitié droite = gaz, moitié gauche = frein puis marche arrière. Les textes ne se sélectionnent pas pendant la conduite. Les records restent dans ton navigateur.
 
 Pour jouer hors ligne, ouvre `index.html` ou `Quaybound.html` directement dans Chrome, Firefox, Edge ou Safari. Le jeu est inclus dans chaque fichier.
 
