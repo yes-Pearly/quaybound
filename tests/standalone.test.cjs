@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+assert.ok(!/<script\b[^>]*(?:\bsrc\s*=|type=["']module["'])/i.test(html),'The playable entry must not load external scripts or ES modules');
+assert.ok(!/<(?:img|link)\b[^>]*\b(?:src|href)=["'](?!data:|#)/i.test(html),'Images, styles and favicon must be embedded');
+const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
+assert.equal(scripts.length,2,'Matter and the complete game must both be inline');
+for(const [i,script] of scripts.entries())new vm.Script(script[1],{filename:`standalone-script-${i}.js`});
+assert.ok(html.includes('quaybound-version" content="2.0.0'));
+console.log('✓ index.html is self-contained and all scripts parse as classic JavaScript');

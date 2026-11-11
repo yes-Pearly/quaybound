@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="quaybound-version" content="2.0.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#eaf0e8">
+  <meta name="description" content="25 tracks. Five terrible vehicles. One very determined pigeon. A browser driving game by Pigeon Studio.">
+  <title>Quaybound — Pigeon Studio</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/pigeon.svg">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main id="app">
+  <div id="scene" aria-label="3D driving course"></div>
+  <header class="masthead">
+    <a class="studio" href="#" id="home" aria-label="Pigeon Studio home"><img src="./assets/pigeon.svg" alt="" width="42" height="42"><span>PIGEON<span>STUDIO</span></span></a>
+    <span class="edition" data-i18n="edition">25 LEVELS. ZERO COMMON SENSE.</span>
+    <nav aria-label="Game settings">
+      <button id="garage" class="text-button" data-i18n="garage-button">GARAGE</button><button class="text-button" id="language" aria-label="Switch to French">EN <span class="dim">/ FR</span></button>
+      <button class="icon-button" id="sound" aria-label="Mute sound" title="Sound"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4zM15 8c3 2 3 6 0 8M18 5c5 4 5 10 0 14"/></svg></button>
+      <button class="icon-button" id="fullscreen" aria-label="Fullscreen" title="Fullscreen · F"><svg viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg></button>
+    </nav>
+  </header>
+  <section id="intro" class="intro">
+    <div class="eyebrow"><span class="live-dot"></span><span data-i18n="eyebrow">A PIGEON STUDIO GAME</span></div>
+    <h1>QUAY<span>BOUND<span class="title-dot">.</span></span></h1>
+    <p class="tagline" data-i18n="tagline">GO ON. FLOOR IT.</p>
+    <p class="intro-copy" data-i18n="intro">25 tracks. Five terrible vehicles.</p>
+    <div class="intro-actions"><button id="play" class="primary"><span data-i18n="play">PLAY</span><span class="arrow">↗</span></button><button id="choose" class="secondary" data-i18n="choose">LEVELS</button></div>
+    <div class="intro-meta"><span><b>25</b> <span data-i18n="routes">LEVELS</span></span><span><b>5</b> <span data-i18n="rides">RIDES</span></span><span><b>∞</b> <span data-i18n="retries">RETRIES</span></span></div>
+  </section>
+  <div class="scene-note" id="scene-note"><span class="note-line"></span><span data-i18n="truck-note">NUGGET</span></div>
+  <div id="hud" class="hidden">
+    <div class="level-heading"><button id="routes" class="back-button" aria-label="Routes">←</button><div><span class="eyebrow" id="level-counter">LEVEL 01 / 25</span><h2 id="level-name">Floor it</h2><span id="biome" class="biome"></span><button id="car-label" class="car-label">Nugget ↗</button></div></div>
+    <div class="run-info"><div class="stamps" id="stamps" aria-label="0 of 3 stamps">◇ ◇ ◇</div><span id="timer">00:00.0</span><button id="pause" class="icon-button" aria-label="Pause"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg></button><button id="restart" class="icon-button" aria-label="Restart"><svg viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg></button></div>
+    <div class="progress-track"><i id="progress"></i><span>⚑</span></div>
+    <div id="tip" class="tip"></div>
+    <div id="ready" class="ready"><span data-i18n="ready">YOUR DELIVERY AWAITS</span><b data-i18n="ready-sub">Hold → to get rolling</b></div>
+    <div class="pedals"><button id="brake" aria-label="Brake and reverse"><svg viewBox="0 0 32 32"><path d="m20 7-9 9 9 9"/></svg><span data-i18n="brake">BRAKE / REVERSE</span></button><button id="throttle" aria-label="Accelerate"><svg viewBox="0 0 32 32"><path d="m12 7 9 9-9 9"/></svg><span data-i18n="gas">ACCELERATE</span></button></div>
+    <div class="speedometer"><b id="speed">0</b><span>KM/H</span><button id='honk' title='Honk · H' aria-label='Honk'>H</button><i><i id="speed-bar"></i></i></div><div id="air-note" class="air-note hidden" data-i18n="air">AIR CONTROL · ← / →</div>
+  </div>
+  <footer id="footer"><span>© PIGEON STUDIO <span class="footer-dot">✦</span> <span data-i18n="made">MADE TO BE PLAYED.</span></span><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd><span data-i18n="drive">DRIVE</span><kbd>R</kbd><span data-i18n="retry">RETRY</span><kbd>F</kbd><span data-i18n="fullscreen">FULLSCREEN</span></span></footer>
+  <section id="overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Game menu"><div class="modal" id="modal"></div></section>
+  <div id="toast" class="toast" role="status"></div>
+  <div id="loading" class="loading"><img src="./assets/pigeon.svg" alt="Pigeon Studio" width="58" height="58"><span>ONE SECOND…</span></div>
+  <noscript>This game needs JavaScript. Ce jeu nécessite JavaScript.</noscript>
+</main>
+<script src="./vendor/matter.min.js"></script>
+<script type="module" src="./game.js"></script>
+</body>
+</html>

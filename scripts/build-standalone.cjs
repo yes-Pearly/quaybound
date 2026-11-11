@@ -1,0 +1,33 @@
+// Builds a genuinely offline, double-clickable edition without any dependencies.
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const root=path.resolve(__dirname,'..');
+const read=name=>fs.readFileSync(path.join(root,name),'utf8');
+const strip=code=>code.replace(/^import[^\n]*\n/gm,'').replace(/^export\s+/gm,'');
+const wrap=(name,code,exports)=>`const ${name}=(()=>{\n${code}\nreturn {${exports}};\n})();\n`;
+const escapeScript=code=>code.replace(/<\/script/gi,'<\\/script');
+let three=read('vendor/three.module.js');
+const exported=three.match(/export\s*\{([^}]+)\};?\s*$/);
+if(!exported)throw new Error('Unsupported Three.js export format');
+const names=exported[1].trim().split(',').map(x=>{const parts=x.trim().split(/\s+as\s+/);return parts.length===2?`${parts[1]}:${parts[0]}`:parts[0]}).join(',');
+three=three.slice(0,exported.index)+`return {${names}};`;
+const pigeon='data:image/svg+xml;base64,'+Buffer.from(read('assets/pigeon.svg')).toString('base64');
+let bundle=wrap('THREE',three,'');
+// Three already returns its export object; remove the unreachable wrapper return.
+bundle=bundle.replace('return {};\n})();','})();');
+bundle+=wrap('levelModule',strip(read('levels.js')),'LEVELS,VEHICLES,THEMES');
+bundle+=wrap('textModule',strip(read('i18n.js')),'COPY');
+bundle+=wrap('physicsModule','const {LEVELS,VEHICLES,THEMES}=levelModule;\n'+strip(read('physics.js')),'SCALE,createWorld,visualOrigin,step');
+bundle+=wrap('renderModule','const {VEHICLES,THEMES}=levelModule;const T=THREE;const {SCALE:S,visualOrigin}=physicsModule;\n'+strip(read('render.js')),'CoastRenderer');
+bundle+=wrap('soundModule',strip(read('audio.js')),'Sound');
+bundle+='(()=>{const {LEVELS,VEHICLES,THEMES}=levelModule;const {COPY}=textModule;const {createWorld,step,SCALE}=physicsModule;const {CoastRenderer}=renderModule;const {Sound}=soundModule;\n'+strip(read('game.js')).replaceAll('./assets/pigeon.svg',pigeon)+'\n})();';
+let html=read('shell.html').replace(/<link rel="stylesheet"[^>]+>/,()=>'<style>'+read('style.css')+'</style>').replaceAll('./assets/pigeon.svg',pigeon);
+html=html.replace(/<script src="\.\/vendor\/matter\.min\.js"><\/script>/,()=>'<script>'+escapeScript(read('vendor/matter.min.js'))+'</script>');
+html=html.replace(/<script type="module" src="\.\/game\.js[^\"]*"><\/script>/,()=>'<script>'+escapeScript(bundle)+'</script>');
+if(/(?:src|href)="\.\//.test(html))throw new Error('An external file dependency remains in the standalone edition');
+if(/<script[^>]+(?:src=|type="module")/i.test(html))throw new Error('The playable edition must not depend on external scripts or ES module loading');
+new vm.Script(bundle,{filename:'quaybound-standalone.js'});
+const out=path.resolve(process.argv[2]||path.join(root,'../Quaybound.html'));
+fs.writeFileSync(path.join(root,'index.html'),html);
+fs.writeFileSync(out,html);console.log(`Standalone game: ${out} (${Math.round(Buffer.byteLength(html)/1024)} KB); index.html is also self-contained.`);
